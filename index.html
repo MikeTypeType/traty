@@ -62,7 +62,20 @@ button{font-family:inherit;color:inherit}
 .chip.g{background:var(--gbg);color:var(--gink)} .chip.b{background:var(--bbg);color:var(--bink)}
 .chip.p{background:var(--pbg);color:var(--pink)} .chip.r{background:var(--rbg);color:var(--rink)}
 .chip.sel{box-shadow:0 0 0 2.5px var(--accent) inset;font-weight:700}
-.inputs{display:flex;gap:8px;margin-top:12px}
+.entry{padding:12px}
+.picker{position:relative;display:flex;align-items:center;gap:10px;background:var(--soft);
+  border:1px solid var(--line);border-radius:12px;padding:0 14px;height:52px;font-size:17px;font-weight:600;
+  transition:background .2s,color .2s}
+.picker.g{background:var(--gbg);color:var(--gink);border-color:transparent}
+.picker.b{background:var(--bbg);color:var(--bink);border-color:transparent}
+.picker.p{background:var(--pbg);color:var(--pink);border-color:transparent}
+.picker.r{background:var(--rbg);color:var(--rink);border-color:transparent}
+.pdot{width:12px;height:12px;border-radius:6px;background:var(--line);flex-shrink:0}
+.plabel{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker:not(.g):not(.b):not(.p):not(.r) .plabel{color:var(--muted);font-weight:500}
+.chev{color:var(--muted);font-size:14px}
+.picker select{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;-webkit-appearance:none}
+.inputs{display:flex;gap:8px;margin-top:8px}
 input{width:100%;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:12px;
   padding:12px;font-family:inherit;-webkit-appearance:none;outline:none}
 input:focus{border-color:var(--accent)}
@@ -97,6 +110,15 @@ input:focus{border-color:var(--accent)}
 .setup button{width:100%;margin-top:12px;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:600;
   background:var(--accent);color:#fff}
 .setup .ghost{background:transparent;color:var(--muted)}
+.setup{overflow-y:auto}
+.setup .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.setup .seg button{margin:0;padding:13px;font-size:15px}
+.setup .seg .g{background:var(--gbg);color:var(--gink)} .setup .seg .b{background:var(--bbg);color:var(--bink)}
+.setup .seg .p{background:var(--pbg);color:var(--pink)} .setup .seg .r{background:var(--rbg);color:var(--rink)}
+.setup .seg .on{box-shadow:0 0 0 2.5px currentColor inset}
+#customList{margin-top:24px}
+.crow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:16px}
+.setup .crow button{width:auto;margin:0;padding:7px 12px;font-size:14px;background:var(--rbg);color:var(--rink);border-radius:10px}
 </style>
 </head>
 <body>
@@ -113,6 +135,20 @@ input:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<div class="card entry">
+  <label class="picker" id="picker">
+    <span class="pdot" id="pdot"></span>
+    <span class="plabel" id="plabel">Выбери категорию</span>
+    <span class="chev">▾</span>
+    <select id="cat" aria-label="Категория"></select>
+  </label>
+  <div class="inputs">
+    <input id="amount" inputmode="decimal" placeholder="Сумма ֏" autocomplete="off">
+    <input id="note" placeholder="Описание" autocomplete="off">
+  </div>
+  <button id="add" disabled>Добавить</button>
+</div>
+
 <div class="card">
   <svg id="chart" preserveAspectRatio="none" aria-label="Траты по дням"></svg>
   <div class="axis"><span>1</span><span id="avg"></span><span id="lastDay"></span></div>
@@ -121,15 +157,6 @@ input:focus{border-color:var(--accent)}
 <div class="card">
   <div class="lbl">Последние траты</div>
   <ul class="recent" id="recent"><li class="empty">Загружаю…</li></ul>
-</div>
-
-<div class="card">
-  <div class="chips" id="chips"></div>
-  <div class="inputs">
-    <input id="amount" inputmode="decimal" placeholder="Сумма ֏" autocomplete="off">
-    <input id="note" placeholder="Описание" autocomplete="off">
-  </div>
-  <button id="add" disabled>Добавить</button>
 </div>
 
 <div class="card">
@@ -148,6 +175,16 @@ input:focus{border-color:var(--accent)}
 
 <div class="toast" id="toast"></div>
 
+<div class="setup" id="catSheet">
+  <h2>Новая категория</h2>
+  <p>Появится в списке сразу и будет учитываться в сводке. В самой таблице добавь её один раз в выпадающий список столбца категорий, иначе ячейка будет с красным уголком.</p>
+  <input id="catName" placeholder="Название" maxlength="30" autocomplete="off">
+  <div class="seg" id="catGroup"></div>
+  <button id="saveCat">Добавить категорию</button>
+  <button class="ghost" id="closeCat">Отмена</button>
+  <div id="customList"></div>
+</div>
+
 <div class="setup" id="setup">
   <h2>Пароль</h2>
   <p>Тот же пароль, что стоит в скрипте (строка SECRET). Он сохранится только на этом телефоне.</p>
@@ -160,15 +197,25 @@ input:focus{border-color:var(--accent)}
 // ===== настройка: ссылка на веб-приложение Google (заканчивается на /exec) =====
 const API = 'https://script.google.com/macros/s/AKfycbxfusSMWYuw6jcCD1-nRlev0ciUoTDEIe8_YlCP_vogt9gDJeERCPP-ciQvQ1jxoCEWrA/exec';
 
-const GROUPS = {
+const BASE_GROUPS = {
   g: ['Продукты','Спорт','Собака','Маркетплейсы','Такси','Здоровье','Ребенок','Ремонт','Развлечения','Нужды Полины','Подарки'],
   b: ['Интернет','Упр. Компания','Электричество','Вода','Газ','Мобильная связь'],
   p: ['Apple Music','Icloud+','Claude','Duolingo'],
   r: ['Другое','Недостача'],
 };
 const GROUP_NAMES = { g: 'Гибкие', b: 'Обязательные', p: 'Подписки', r: 'Прочее' };
+let GROUPS = BASE_GROUPS, CUSTOM = [];
 const GROUP_OF = {};
-Object.entries(GROUPS).forEach(([g, list]) => list.forEach(c => GROUP_OF[c] = g));
+// список категорий приходит из скрипта (вместе со своими категориями)
+function setCats(cats, custom) {
+  if (cats && cats.length) {
+    GROUPS = { g: [], b: [], p: [], r: [] };
+    cats.forEach(([c, g]) => (GROUPS[g] || GROUPS.r).push(c));
+  }
+  CUSTOM = custom || [];
+  Object.keys(GROUP_OF).forEach(k => delete GROUP_OF[k]);
+  Object.entries(GROUPS).forEach(([g, list]) => list.forEach(c => GROUP_OF[c] = g));
+}
 const MONTH = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 const MONTH_TO = ['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];
 
@@ -207,8 +254,12 @@ async function call(payload) {
 function applySummary(data) {
   if (!data || !data.cur) return;
   summary = { y: data.y, m: data.m, today: data.today, days: data.days, url: data.url,
-              cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev, at: Date.now() };
+              cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev,
+              cats: data.cats, custom: data.custom, at: Date.now() };
   store.set('summary', summary);
+  const before = JSON.stringify([GROUPS, CUSTOM]);
+  setCats(data.cats, data.custom);
+  if (JSON.stringify([GROUPS, CUSTOM]) !== before) buildChips();
 }
 
 async function sync() {
@@ -366,18 +417,41 @@ function drawBars(v, total) {
 }
 
 // ----- ввод траты -----
+const EMOJI = { g: '🟢', b: '🔵', p: '🩷', r: '🔴' };
 function buildChips() {
-  const box = $('chips');
-  Object.entries(GROUPS).forEach(([g, list]) => list.forEach(cat => {
-    const b = document.createElement('button');
-    b.className = 'chip ' + g; b.textContent = cat;
-    b.onclick = () => {
-      document.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
-      b.classList.add('sel'); selected = cat; updateAdd();
-      $('amount').focus();
-    };
-    box.appendChild(b);
-  }));
+  const sel = $('cat');
+  sel.innerHTML = '';
+  const ph = document.createElement('option');
+  ph.value = ''; ph.textContent = 'Выбери категорию'; ph.disabled = true; ph.selected = true;
+  sel.appendChild(ph);
+  Object.entries(GROUPS).forEach(([g, list]) => {
+    const og = document.createElement('optgroup');
+    og.label = GROUP_NAMES[g];
+    list.forEach(cat => {
+      const o = document.createElement('option');
+      o.value = cat; o.textContent = EMOJI[g] + '  ' + cat;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  const add = document.createElement('option');
+  add.value = '__new'; add.textContent = '＋ Новая категория…';
+  sel.appendChild(add);
+  if (selected && GROUP_OF[selected]) sel.value = selected; else if (selected) setCategory(null);
+}
+$('cat').addEventListener('change', () => {
+  const sel = $('cat');
+  if (sel.value === '__new') { sel.value = selected || ''; openCatSheet(); }
+  else setCategory(sel.value);
+});
+function setCategory(cat) {
+  selected = cat || null;
+  const g = cat ? (GROUP_OF[cat] || 'r') : '';
+  $('picker').className = 'picker' + (g ? ' ' + g : '');
+  $('pdot').style.background = g ? 'var(--' + g + ')' : '';
+  $('plabel').textContent = cat || 'Выбери категорию';
+  if (!cat) $('cat').value = '';
+  updateAdd();
 }
 
 function amountValue() { return Number($('amount').value.replace(/\s/g, '').replace(',', '.')); }
@@ -391,14 +465,62 @@ $('add').onclick = () => {
   queue.push({ cid: uid(), category: selected, amount: amt, note: $('note').value.trim(), date: todayISO() });
   store.set('queue', queue);
   toast('✓ ' + selected + ' — ' + fmt(amt) + ' ֏');
-  $('amount').value = ''; $('note').value = ''; selected = null;
-  document.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
-  updateAdd(); $('amount').blur(); $('note').blur();
+  $('amount').value = ''; $('note').value = '';
+  setCategory(null); $('amount').blur(); $('note').blur();
   render(); sync();
 };
 
 $('more').onclick = () => { showAll = !showAll; render(); };
 $('refresh').onclick = () => sync();
+
+// ----- свои категории -----
+let newGroup = 'g';
+function openCatSheet() {
+  $('catName').value = ''; newGroup = 'g';
+  drawSeg(); drawCustom();
+  $('catSheet').classList.add('show');
+}
+function drawSeg() {
+  const box = $('catGroup'); box.innerHTML = '';
+  ['g', 'b', 'p', 'r'].forEach(g => {
+    const b = document.createElement('button');
+    b.className = g + (g === newGroup ? ' on' : '');
+    b.textContent = EMOJI[g] + ' ' + GROUP_NAMES[g];
+    b.onclick = () => { newGroup = g; drawSeg(); };
+    box.appendChild(b);
+  });
+}
+function drawCustom() {
+  const box = $('customList'); box.innerHTML = '';
+  if (!CUSTOM.length) return;
+  const h = document.createElement('div'); h.className = 'lbl'; h.textContent = 'Твои категории';
+  box.appendChild(h);
+  CUSTOM.forEach(c => {
+    const r = document.createElement('div'); r.className = 'crow';
+    r.innerHTML = '<span></span><button>Удалить</button>';
+    r.querySelector('span').textContent = EMOJI[GROUP_OF[c] || 'r'] + '  ' + c;
+    r.querySelector('button').onclick = () => catAction({ action: 'removeCategory', name: c }, 'Удалено: ' + c);
+    box.appendChild(r);
+  });
+}
+async function catAction(payload, okText, select) {
+  if (!secret) { openSetup(); return; }
+  toast('Сохраняю…');
+  try {
+    applySummary(await call(payload));
+    $('catSheet').classList.remove('show');
+    if (select) setCategory(select);
+    render(); toast(okText);
+  } catch (e) {
+    toast(e.name === 'AbortError' || e instanceof TypeError ? 'Нет связи — попробуй позже' : e.message);
+  }
+}
+$('saveCat').onclick = () => {
+  const n = $('catName').value.trim();
+  if (!n) { toast('Впиши название'); return; }
+  catAction({ action: 'addCategory', name: n, group: newGroup }, '✓ Категория добавлена', n);
+};
+$('closeCat').onclick = () => $('catSheet').classList.remove('show');
 
 // ----- пароль -----
 function openSetup() { $('secretIn').value = secret; $('setup').classList.add('show'); }
@@ -416,6 +538,7 @@ function toast(text) {
 }
 
 // ----- запуск -----
+setCats(summary && summary.cats, summary && summary.custom);
 buildChips();
 render();                       // мгновенно показываем то, что сохранено на телефоне
 if (!secret) openSetup(); else sync();   // и тихо обновляем в фоне
