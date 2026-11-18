@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Траты">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Траты</title>
+<style>
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --text:#1C1C1E; --muted:#8E8E93; --line:#E5E5EA; --soft:#F2F2F7;
+  --accent:#2E6B30; --accent-ink:#FFFFFF; --up:#C5221F; --down:#137333; --today:#2E6B30;
+  --g:#34A853; --gbg:#E6F4EA; --gink:#137333;
+  --b:#4285F4; --bbg:#E8F0FE; --bink:#1967D2;
+  --p:#E37BB0; --pbg:#FCE4F1; --pink:#A1306E;
+  --r:#EA4335; --rbg:#FCE8E6; --rink:#C5221F;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#000000; --card:#1C1C1E; --text:#F2F2F7; --muted:#98989F; --line:#2C2C2E; --soft:#2C2C2E;
+    --accent:#3E9B43; --up:#FF6B61; --down:#5BD06A; --today:#5BD06A;
+    --gbg:#16301C; --gink:#7FE08A; --bbg:#162A47; --bink:#8AB4F8;
+    --pbg:#3A1B2C; --pink:#F49BC8; --rbg:#3D1715; --rink:#FF8A80;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Helvetica,Arial,sans-serif;font-size:16px}
+body{padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 24px)}
+button{font-family:inherit;color:inherit}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 2px 12px}
+.top h1{margin:0;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.total{font-size:34px;font-weight:700;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+.cmp{font-size:13px;color:var(--muted);margin-top:2px}
+.cmp b{font-weight:600}
+.icons{display:flex;gap:6px;flex-shrink:0;padding-top:2px}
+.ibtn{width:36px;height:36px;border-radius:18px;border:0;background:var(--card);font-size:17px;display:grid;place-items:center}
+.ibtn.spin span{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px}
+.lbl{font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#chart{display:block;width:100%;height:84px}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.recent{list-style:none;margin:0;padding:0}
+.recent li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.recent li:first-child{border-top:0;padding-top:0}
+.dot{width:10px;height:10px;border-radius:5px;flex-shrink:0}
+.recent .name{flex:1;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent .when{font-size:13px;color:var(--muted);width:62px;text-align:right}
+.recent .amt{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;min-width:86px;text-align:right}
+.pending{opacity:.55}
+.empty{color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:0;border-radius:18px;padding:8px 12px;font-size:15px;font-weight:500}
+.chip.g{background:var(--gbg);color:var(--gink)} .chip.b{background:var(--bbg);color:var(--bink)}
+.chip.p{background:var(--pbg);color:var(--pink)} .chip.r{background:var(--rbg);color:var(--rink)}
+.chip.sel{box-shadow:0 0 0 2.5px var(--accent) inset;font-weight:700}
+.inputs{display:flex;gap:8px;margin-top:12px}
+input{width:100%;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:12px;
+  padding:12px;font-family:inherit;-webkit-appearance:none;outline:none}
+input:focus{border-color:var(--accent)}
+#amount{font-size:24px;font-weight:700;flex:1.1;font-variant-numeric:tabular-nums}
+#note{font-size:16px;flex:1}
+#add{width:100%;margin-top:10px;border:0;border-radius:14px;padding:15px;font-size:18px;font-weight:600;
+  background:var(--accent);color:var(--accent-ink)}
+#add:disabled{opacity:.45}
+.bars .bar{margin-top:9px}
+.bars .bar:first-child{margin-top:0}
+.bars .t{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
+.bars .t span:last-child{font-variant-numeric:tabular-nums;font-weight:600}
+.track{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.fill{height:100%;border-radius:4px}
+.split{display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:8px;background:var(--soft)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.more{border:0;background:none;color:var(--accent);font-size:14px;font-weight:600;padding:10px 0 0}
+.foot{text-align:center;margin-top:6px}
+.foot a{color:var(--accent);font-size:14px;text-decoration:none;font-weight:600}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);
+  background:#1C1C1E;color:#fff;border-radius:14px;padding:13px 16px;font-size:15px;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);transform:translateY(140%);opacity:0;visibility:hidden;
+  transition:transform .25s ease,opacity .25s ease,visibility .25s;z-index:10}
+@media (prefers-color-scheme: dark){.toast{background:#3A3A3C}}
+.toast.show{transform:none;opacity:1;visibility:visible}
+.setup{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;
+  padding:calc(env(safe-area-inset-top) + 40px) 24px 24px}
+.setup.show{display:block}
+.setup h2{margin:0 0 8px;font-size:26px}
+.setup p{color:var(--muted);font-size:15px;line-height:1.4;margin:0 0 18px}
+.setup button{width:100%;margin-top:12px;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:600;
+  background:var(--accent);color:#fff}
+.setup .ghost{background:transparent;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1 id="mTitle">Траты</h1>
+    <div class="total" id="total">—</div>
+    <div class="cmp" id="cmp">&nbsp;</div>
+  </div>
+  <div class="icons">
+    <button class="ibtn" id="refresh" aria-label="Обновить"><span>↻</span></button>
+    <button class="ibtn" id="gear" aria-label="Настройки">⚙︎</button>
+  </div>
+</div>
+
+<div class="card">
+  <svg id="chart" preserveAspectRatio="none" aria-label="Траты по дням"></svg>
+  <div class="axis"><span>1</span><span id="avg"></span><span id="lastDay"></span></div>
+</div>
+
+<div class="card">
+  <div class="lbl">Последние траты</div>
+  <ul class="recent" id="recent"><li class="empty">Загружаю…</li></ul>
+</div>
+
+<div class="card">
+  <div class="chips" id="chips"></div>
+  <div class="inputs">
+    <input id="amount" inputmode="decimal" placeholder="Сумма ֏" autocomplete="off">
+    <input id="note" placeholder="Описание" autocomplete="off">
+  </div>
+  <button id="add" disabled>Добавить</button>
+</div>
+
+<div class="card">
+  <div class="lbl">Структура месяца</div>
+  <div class="split" id="split"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="card">
+  <div class="lbl">По категориям</div>
+  <div class="bars" id="bars"></div>
+  <button class="more" id="more" hidden>Показать все</button>
+</div>
+
+<div class="foot"><a id="sheetLink" href="#" target="_blank" hidden>Открыть таблицу</a></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="setup" id="setup">
+  <h2>Пароль</h2>
+  <p>Тот же пароль, что стоит в скрипте (строка SECRET). Он сохранится только на этом телефоне.</p>
+  <input id="secretIn" type="password" autocomplete="off" placeholder="Пароль">
+  <button id="saveSecret">Сохранить</button>
+  <button class="ghost" id="closeSetup">Отмена</button>
+</div>
+
+<script>
+// ===== настройка: ссылка на веб-приложение Google (заканчивается на /exec) =====
+const API = 'https://script.google.com/macros/s/AKfycbxfusSMWYuw6jcCD1-nRlev0ciUoTDEIe8_YlCP_vogt9gDJeERCPP-ciQvQ1jxoCEWrA/exec';
+
+const GROUPS = {
+  g: ['Продукты','Спорт','Собака','Маркетплейсы','Такси','Здоровье','Ребенок','Ремонт','Развлечения','Нужды Полины','Подарки'],
+  b: ['Интернет','Упр. Компания','Электричество','Вода','Газ','Мобильная связь'],
+  p: ['Apple Music','Icloud+','Claude','Duolingo'],
+  r: ['Другое','Недостача'],
+};
+const GROUP_NAMES = { g: 'Гибкие', b: 'Обязательные', p: 'Подписки', r: 'Прочее' };
+const GROUP_OF = {};
+Object.entries(GROUPS).forEach(([g, list]) => list.forEach(c => GROUP_OF[c] = g));
+const MONTH = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTH_TO = ['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];
+
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ');
+
+// ----- хранилище на телефоне -----
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
+};
+let secret = store.get('secret', '');
+let summary = store.get('summary', null);   // последняя сводка с сервера
+let queue = store.get('queue', []);         // траты, которые ещё не дошли до таблицы
+let selected = null, showAll = false, syncing = false;
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ----- связь со скриптом -----
+async function call(payload) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 25000);
+  try {
+    const res = await fetch(API, { method: 'POST', body: JSON.stringify(Object.assign({ secret, app: 1 }, payload)), signal: ctrl.signal });
+    const data = await res.json();
+    if (!data.ok) throw new Error((data.text || 'Ошибка').replace(/^✗\s*/, ''));
+    return data;
+  } finally { clearTimeout(t); }
+}
+
+function applySummary(data) {
+  if (!data || !data.cur) return;
+  summary = { y: data.y, m: data.m, today: data.today, days: data.days, url: data.url,
+              cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev, at: Date.now() };
+  store.set('summary', summary);
+}
+
+async function sync() {
+  if (!secret || syncing) return;
+  syncing = true; $('refresh').classList.add('spin');
+  try {
+    // сначала отправляем всё, что ждёт в очереди
+    while (queue.length) {
+      const item = queue[0];
+      const data = await call(item);
+      applySummary(data);
+      queue.shift(); store.set('queue', queue);
+      render();
+    }
+    applySummary(await call({ action: 'summary' }));
+    render();
+  } catch (e) {
+    if (e.name === 'AbortError' || e instanceof TypeError) toast('Нет связи — отправлю, когда появится интернет');
+    else if (/ключ/i.test(e.message)) { toast('Неверный пароль'); openSetup(); }
+    else {
+      // ошибка конкретной траты (например, неизвестная категория) — убираем её, чтобы не блокировать очередь
+      if (queue.length) { const bad = queue.shift(); store.set('queue', queue); toast('Не записано (' + bad.category + '): ' + e.message); render(); }
+      else toast(e.message);
+    }
+  } finally {
+    syncing = false; $('refresh').classList.remove('spin');
+  }
+}
+
+// ----- вид -----
+function viewData() {
+  const now = new Date();
+  const s = summary && summary.m === now.getMonth() + 1 && summary.y === now.getFullYear() ? summary : null;
+  const days = s ? s.days : new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const today = now.getDate();
+  const cur = (s ? s.cur : []).map(r => ({ cat: r[0], day: r[1], amt: r[2], m: now.getMonth() + 1 }));
+  const prevRows = s ? s.prev.map(r => ({ cat: r[0], day: r[1], amt: r[2], m: s.pm })) : [];
+  // траты из очереди сразу учитываем, не дожидаясь сервера
+  const pend = queue.filter(q => q.date.slice(0, 7) === todayISO().slice(0, 7))
+    .map(q => ({ cat: q.category, day: Number(q.date.slice(8)), amt: Number(q.amount), m: now.getMonth() + 1, pending: true }));
+  return { s, days, today, cur: cur.concat(pend), prevRows, pend };
+}
+
+function render() {
+  const v = viewData();
+  const now = new Date();
+  const m = now.getMonth();
+  $('mTitle').textContent = MONTH[m] + ' ' + now.getFullYear();
+
+  const total = v.cur.reduce((a, r) => a + r.amt, 0);
+  $('total').textContent = v.s || v.pend.length ? fmt(total) + ' ֏' : '—';
+
+  // сравнение с прошлым месяцем на это же число
+  if (v.s && v.prevRows.length) {
+    const lim = Math.min(v.today, v.s.pdays);
+    const prevSame = v.prevRows.filter(r => r.day && r.day <= lim).reduce((a, r) => a + r.amt, 0);
+    if (prevSame > 0) {
+      const d = total / prevSame - 1;
+      const up = d >= 0;
+      $('cmp').innerHTML = '<b style="color:' + (up ? 'var(--up)' : 'var(--down)') + '">' + (up ? '▲ ' : '▼ ') +
+        Math.abs(Math.round(d * 100)) + '%</b> к ' + MONTH_TO[v.s.pm - 1] + ' на это же число';
+    } else $('cmp').textContent = ' ';
+  } else $('cmp').innerHTML = v.s ? '&nbsp;' : 'Нет данных — нажми ↻';
+
+  drawChart(v);
+  drawRecent(v);
+  drawGroups(v, total);
+  drawBars(v, total);
+
+  const link = $('sheetLink');
+  if (v.s && v.s.url) { link.href = v.s.url; link.hidden = false; } else link.hidden = true;
+}
+
+function drawChart(v) {
+  const svg = $('chart');
+  const W = 330, H = 84, gap = 2;
+  const per = Array(v.days + 1).fill(0);
+  v.cur.forEach(r => { if (r.day >= 1 && r.day <= v.days) per[r.day] += r.amt; });
+  const max = Math.max(1, ...per);
+  const bw = (W - gap * (v.days - 1)) / v.days;
+  let out = '';
+  for (let d = 1; d <= v.days; d++) {
+    const x = (d - 1) * (bw + gap);
+    const h = per[d] ? Math.max(3, per[d] / max * (H - 4)) : 2;
+    const fill = d === v.today ? css('--today') : d > v.today ? css('--line') : css('--muted');
+    const op = d === v.today ? 1 : d > v.today ? 1 : .55;
+    out += '<rect x="' + x.toFixed(2) + '" y="' + (H - h).toFixed(2) + '" width="' + bw.toFixed(2) + '" height="' + h.toFixed(2) +
+      '" rx="1.5" fill="' + fill + '" fill-opacity="' + op + '"/>';
+  }
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.innerHTML = out;
+  const spent = v.cur.reduce((a, r) => a + r.amt, 0);
+  $('avg').textContent = v.today ? 'в среднем ' + fmt(spent / v.today) + ' ֏/день' : '';
+  $('lastDay').textContent = v.days;
+}
+
+function whenLabel(r) {
+  const now = new Date();
+  if (r.m === now.getMonth() + 1) {
+    if (r.day === now.getDate()) return 'сегодня';
+    if (r.day === now.getDate() - 1) return 'вчера';
+  }
+  return r.day ? r.day + '.' + String(r.m).padStart(2, '0') : '';
+}
+
+function drawRecent(v) {
+  let list = v.cur.slice().reverse();
+  if (list.length < 5) list = list.concat(v.prevRows.slice().reverse());
+  list = list.slice(0, 5);
+  const ul = $('recent');
+  if (!list.length) { ul.innerHTML = '<li class="empty">' + (v.s ? 'В этом месяце трат пока нет' : 'Загружаю…') + '</li>'; return; }
+  ul.innerHTML = '';
+  list.forEach(r => {
+    const li = document.createElement('li');
+    if (r.pending) li.className = 'pending';
+    const g = GROUP_OF[r.cat] || 'r';
+    li.innerHTML = '<span class="dot" style="background:var(--' + g + ')"></span><span class="name"></span>' +
+      '<span class="when"></span><span class="amt"></span>';
+    li.querySelector('.name').textContent = r.cat;
+    li.querySelector('.when').textContent = r.pending ? '⏳' : whenLabel(r);
+    li.querySelector('.amt').textContent = fmt(r.amt) + ' ֏';
+    ul.appendChild(li);
+  });
+}
+
+function drawGroups(v, total) {
+  const sums = { g: 0, b: 0, p: 0, r: 0 };
+  v.cur.forEach(r => sums[GROUP_OF[r.cat] || 'r'] += r.amt);
+  $('split').innerHTML = total ? Object.keys(sums).filter(g => sums[g] > 0)
+    .map(g => '<div style="width:' + (sums[g] / total * 100) + '%;background:var(--' + g + ')"></div>').join('') : '';
+  $('legend').innerHTML = Object.keys(sums).map(g =>
+    '<span><i class="dot" style="background:var(--' + g + ')"></i>' + GROUP_NAMES[g] + ' ' +
+    (total ? Math.round(sums[g] / total * 100) : 0) + '%</span>').join('');
+}
+
+function drawBars(v, total) {
+  const by = {};
+  v.cur.forEach(r => by[r.cat] = (by[r.cat] || 0) + r.amt);
+  const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
+  const max = rows.length ? rows[0][1] : 1;
+  const shown = showAll ? rows : rows.slice(0, 6);
+  const box = $('bars');
+  box.innerHTML = rows.length ? '' : '<div class="empty">Пока пусто</div>';
+  shown.forEach(([cat, sum]) => {
+    const g = GROUP_OF[cat] || 'r';
+    const d = document.createElement('div');
+    d.className = 'bar';
+    d.innerHTML = '<div class="t"><span></span><span>' + fmt(sum) + ' ֏</span></div>' +
+      '<div class="track"><div class="fill" style="width:' + (sum / max * 100) + '%;background:var(--' + g + ')"></div></div>';
+    d.querySelector('.t span').textContent = cat;
+    box.appendChild(d);
+  });
+  $('more').hidden = rows.length <= 6;
+  $('more').textContent = showAll ? 'Свернуть' : 'Показать все (' + rows.length + ')';
+}
+
+// ----- ввод траты -----
+function buildChips() {
+  const box = $('chips');
+  Object.entries(GROUPS).forEach(([g, list]) => list.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'chip ' + g; b.textContent = cat;
+    b.onclick = () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel'); selected = cat; updateAdd();
+      $('amount').focus();
+    };
+    box.appendChild(b);
+  }));
+}
+
+function amountValue() { return Number($('amount').value.replace(/\s/g, '').replace(',', '.')); }
+function updateAdd() { $('add').disabled = !(selected && amountValue() > 0); }
+
+$('amount').addEventListener('input', updateAdd);
+$('add').onclick = () => {
+  if (!secret) { openSetup(); return; }
+  const amt = amountValue();
+  if (!selected || !(amt > 0)) return;
+  queue.push({ cid: uid(), category: selected, amount: amt, note: $('note').value.trim(), date: todayISO() });
+  store.set('queue', queue);
+  toast('✓ ' + selected + ' — ' + fmt(amt) + ' ֏');
+  $('amount').value = ''; $('note').value = ''; selected = null;
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
+  updateAdd(); $('amount').blur(); $('note').blur();
+  render(); sync();
+};
+
+$('more').onclick = () => { showAll = !showAll; render(); };
+$('refresh').onclick = () => sync();
+
+// ----- пароль -----
+function openSetup() { $('secretIn').value = secret; $('setup').classList.add('show'); }
+$('gear').onclick = openSetup;
+$('closeSetup').onclick = () => $('setup').classList.remove('show');
+$('saveSecret').onclick = () => {
+  secret = $('secretIn').value.trim(); store.set('secret', secret);
+  $('setup').classList.remove('show'); sync();
+};
+
+let toastT;
+function toast(text) {
+  const t = $('toast'); t.textContent = text; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ----- запуск -----
+buildChips();
+render();                       // мгновенно показываем то, что сохранено на телефоне
+if (!secret) openSetup(); else sync();   // и тихо обновляем в фоне
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); sync(); } });
+window.addEventListener('online', sync);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
