@@ -119,19 +119,36 @@ input:focus{border-color:var(--accent)}
 #customList{margin-top:24px}
 .crow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:16px}
 .setup .crow button{width:auto;margin:0;padding:7px 12px;font-size:14px;background:var(--rbg);color:var(--rink);border-radius:10px}
+.top{display:block}
+.toprow{display:flex;justify-content:space-between;align-items:center}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px}
+.slbl{font-size:13px;color:var(--muted);font-weight:600}
+.stats .total{font-size:27px;margin-top:0;white-space:nowrap}
+.stats .cmp{font-size:12px;line-height:1.3}
+.rest.pos{color:var(--down)} .rest.neg{color:var(--up)}
 </style>
 </head>
 <body>
 
 <div class="top">
-  <div>
+  <div class="toprow">
     <h1 id="mTitle">Траты</h1>
-    <div class="total" id="total">—</div>
-    <div class="cmp" id="cmp">&nbsp;</div>
+    <div class="icons">
+      <button class="ibtn" id="refresh" aria-label="Обновить"><span>↻</span></button>
+      <button class="ibtn" id="gear" aria-label="Настройки">⚙︎</button>
+    </div>
   </div>
-  <div class="icons">
-    <button class="ibtn" id="refresh" aria-label="Обновить"><span>↻</span></button>
-    <button class="ibtn" id="gear" aria-label="Настройки">⚙︎</button>
+  <div class="stats">
+    <div>
+      <div class="slbl">Расход</div>
+      <div class="total" id="total">—</div>
+      <div class="cmp" id="cmp">&nbsp;</div>
+    </div>
+    <div>
+      <div class="slbl">Остаток</div>
+      <div class="total rest" id="rest">—</div>
+      <div class="cmp" id="restSub">&nbsp;</div>
+    </div>
   </div>
 </div>
 
@@ -255,7 +272,7 @@ function applySummary(data) {
   if (!data || !data.cur) return;
   summary = { y: data.y, m: data.m, today: data.today, days: data.days, url: data.url,
               cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev,
-              cats: data.cats, custom: data.custom, at: Date.now() };
+              cats: data.cats, custom: data.custom, income: data.income || 0, at: Date.now() };
   store.set('summary', summary);
   const before = JSON.stringify([GROUPS, CUSTOM]);
   setCats(data.cats, data.custom);
@@ -312,6 +329,19 @@ function render() {
   const total = v.cur.reduce((a, r) => a + r.amt, 0);
   $('total').textContent = v.s || v.pend.length ? fmt(total) + ' ֏' : '—';
 
+  // остаток = доход месяца из МАСТЕРа минус расход
+  const income = v.s ? v.s.income || 0 : 0;
+  const rest = $('rest');
+  if (income > 0) {
+    const left = income - total;
+    rest.textContent = (left < 0 ? '−' : '') + fmt(Math.abs(left)) + ' ֏';
+    rest.className = 'total rest ' + (left < 0 ? 'neg' : 'pos');
+    $('restSub').textContent = 'из дохода ' + fmt(income) + ' ֏';
+  } else {
+    rest.textContent = '—'; rest.className = 'total rest';
+    $('restSub').textContent = v.s ? 'доход месяца не внесён в МАСТЕР' : ' ';
+  }
+
   // сравнение с прошлым месяцем на это же число
   if (v.s && v.prevRows.length) {
     const lim = Math.min(v.today, v.s.pdays);
@@ -320,7 +350,7 @@ function render() {
       const d = total / prevSame - 1;
       const up = d >= 0;
       $('cmp').innerHTML = '<b style="color:' + (up ? 'var(--up)' : 'var(--down)') + '">' + (up ? '▲ ' : '▼ ') +
-        Math.abs(Math.round(d * 100)) + '%</b> к ' + MONTH_TO[v.s.pm - 1] + ' на это же число';
+        Math.abs(Math.round(d * 100)) + '%</b> к ' + MONTH_TO[v.s.pm - 1];
     } else $('cmp').textContent = ' ';
   } else $('cmp').innerHTML = v.s ? '&nbsp;' : 'Нет данных — нажми ↻';
 
