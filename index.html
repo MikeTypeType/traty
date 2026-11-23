@@ -338,7 +338,7 @@ function render() {
     $('restSub').textContent = 'по таблице';
   } else {
     rest.textContent = '—'; rest.className = 'total rest';
-    $('restSub').textContent = v.s ? 'нет поля REMAINS' : ' ';
+    $('restSub').textContent = !v.s ? ' ' : v.s.remains === null ? 'нет поля REMAINS' : 'обнови скрипт и нажми ↻';
   }
 
   // сравнение с прошлым месяцем на это же число
