@@ -336,7 +336,7 @@ function render() {
     const left = v.s.remains - v.pend.reduce((a, r) => a + r.amt, 0);
     rest.textContent = (left < 0 ? '−' : '') + fmt(Math.abs(left)) + ' ֏';
     rest.className = 'total rest ' + (left < 0 ? 'neg' : 'pos');
-    // под остатком — зарплата месяца и стрелочка к прошлому месяцу
+    // под остатком — TOTAL INCOME месяца и стрелочка к прошлому месяцу
     const sal = v.s.salary, psal = v.s.psalary;
     if (typeof sal === 'number' && sal > 0) {
       let arrow = '';
@@ -345,8 +345,8 @@ function render() {
         arrow = ' <b style="color:' + (up ? 'var(--down)' : 'var(--up)') + '">' + (up ? '▲' : '▼') + ' ' +
           Math.abs(Math.round((sal / psal - 1) * 100)) + '%</b>';
       }
-      $('restSub').innerHTML = 'зарплата ' + fmt(sal) + ' ֏' + arrow;
-    } else $('restSub').textContent = 'зарплата не внесена';
+      $('restSub').innerHTML = 'доход ' + fmt(sal) + ' ֏' + arrow;
+    } else $('restSub').textContent = 'доход не внесён';
   } else {
     rest.textContent = '—'; rest.className = 'total rest';
     $('restSub').textContent = !v.s ? ' ' : v.s.remains === null ? 'нет поля REMAINS' : 'обнови скрипт и нажми ↻';
