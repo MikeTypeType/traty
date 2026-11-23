@@ -272,7 +272,8 @@ function applySummary(data) {
   if (!data || !data.cur) return;
   summary = { y: data.y, m: data.m, today: data.today, days: data.days, url: data.url,
               cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev,
-              cats: data.cats, custom: data.custom, remains: data.remains, at: Date.now() };
+              cats: data.cats, custom: data.custom, remains: data.remains,
+              salary: data.salary, psalary: data.psalary, at: Date.now() };
   store.set('summary', summary);
   const before = JSON.stringify([GROUPS, CUSTOM]);
   setCats(data.cats, data.custom);
@@ -335,7 +336,17 @@ function render() {
     const left = v.s.remains - v.pend.reduce((a, r) => a + r.amt, 0);
     rest.textContent = (left < 0 ? '−' : '') + fmt(Math.abs(left)) + ' ֏';
     rest.className = 'total rest ' + (left < 0 ? 'neg' : 'pos');
-    $('restSub').textContent = 'по таблице';
+    // под остатком — зарплата месяца и стрелочка к прошлому месяцу
+    const sal = v.s.salary, psal = v.s.psalary;
+    if (typeof sal === 'number' && sal > 0) {
+      let arrow = '';
+      if (typeof psal === 'number' && psal > 0 && sal !== psal) {
+        const up = sal > psal;
+        arrow = ' <b style="color:' + (up ? 'var(--down)' : 'var(--up)') + '">' + (up ? '▲' : '▼') + ' ' +
+          Math.abs(Math.round((sal / psal - 1) * 100)) + '%</b>';
+      }
+      $('restSub').innerHTML = 'зарплата ' + fmt(sal) + ' ֏' + arrow;
+    } else $('restSub').textContent = 'зарплата не внесена';
   } else {
     rest.textContent = '—'; rest.className = 'total rest';
     $('restSub').textContent = !v.s ? ' ' : v.s.remains === null ? 'нет поля REMAINS' : 'обнови скрипт и нажми ↻';
