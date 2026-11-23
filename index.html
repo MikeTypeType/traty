@@ -272,7 +272,7 @@ function applySummary(data) {
   if (!data || !data.cur) return;
   summary = { y: data.y, m: data.m, today: data.today, days: data.days, url: data.url,
               cur: data.cur, pm: data.pm, pdays: data.pdays, prev: data.prev,
-              cats: data.cats, custom: data.custom, income: data.income || 0, at: Date.now() };
+              cats: data.cats, custom: data.custom, remains: data.remains, at: Date.now() };
   store.set('summary', summary);
   const before = JSON.stringify([GROUPS, CUSTOM]);
   setCats(data.cats, data.custom);
@@ -329,17 +329,16 @@ function render() {
   const total = v.cur.reduce((a, r) => a + r.amt, 0);
   $('total').textContent = v.s || v.pend.length ? fmt(total) + ' ֏' : '—';
 
-  // остаток = доход месяца из МАСТЕРа минус расход
-  const income = v.s ? v.s.income || 0 : 0;
+  // остаток берём из поля REMAINS вкладки месяца; ещё не отправленные траты вычитаем сразу
   const rest = $('rest');
-  if (income > 0) {
-    const left = income - total;
+  if (v.s && typeof v.s.remains === 'number') {
+    const left = v.s.remains - v.pend.reduce((a, r) => a + r.amt, 0);
     rest.textContent = (left < 0 ? '−' : '') + fmt(Math.abs(left)) + ' ֏';
     rest.className = 'total rest ' + (left < 0 ? 'neg' : 'pos');
-    $('restSub').textContent = 'из дохода ' + fmt(income) + ' ֏';
+    $('restSub').textContent = 'по таблице';
   } else {
     rest.textContent = '—'; rest.className = 'total rest';
-    $('restSub').textContent = v.s ? 'доход месяца не внесён в МАСТЕР' : ' ';
+    $('restSub').textContent = v.s ? 'нет поля REMAINS' : ' ';
   }
 
   // сравнение с прошлым месяцем на это же число
